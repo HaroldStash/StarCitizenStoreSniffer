@@ -1,0 +1,69 @@
+       "manufacturers": [
+            {
+                "id": 1,
+                "name": "Roberts Space Industries"
+            },
+            {
+                "id": 3,
+                "name": "Anvil Aerospace"
+            },
+            {
+                "id": 4,
+                "name": "MISC"
+            },
+            {
+                "id": 5,
+                "name": "Drake Interplanetary"
+            },
+            {
+                "id": 6,
+                "name": "Origin Jumpworks"
+            },
+            {
+                "id": 12,
+                "name": "Aegis Dynamics"
+            },
+            {
+                "id": 13,
+                "name": "Vanduul"
+            },
+            {
+                "id": 17,
+                "name": "Greycat Industrial"
+            },
+            {
+                "id": 19,
+                "name": "Kruger Intergalactic"
+            },
+            {
+                "id": 21,
+                "name": "Banu"
+            },
+            {
+                "id": 22,
+                "name": "Consolidated Outland"
+            },
+            {
+                "id": 68,
+                "name": "Crusader Industries"
+            },
+            {
+                "id": 69,
+                "name": "Esperia"
+            },
+            {
+                "id": 73,
+                "name": "ARGO Astronautics"
+            },
+            {
+                "id": 81,
+                "name": "Aopoa"
+            },
+            {
+                "id": 83,
+                "name": "Tumbril"
+            },
+            {
+                "id": 93,
+                "name": "Gatac Manufacture"
+            }

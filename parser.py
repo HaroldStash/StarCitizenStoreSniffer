@@ -7,9 +7,9 @@ from columnar import columnar
 from click import style
 
 parser = argparse.ArgumentParser(description='RSI Store Parser')
-parser.add_argument('-u', '--upgrade', help="Show all available upgrades", action="store_true")
-parser.add_argument('-s', '--standalone', help="Show all available standalone ships", action="store_true")
-parser.add_argument('-a', '--allships', help="Show all ships in the database", action="store_true")
+parser.add_argument('-u', '--upgrade', help="Show all available upgrades for sale in the store", action="store_true")
+parser.add_argument('-s', '--standalone', help="Show all available standalone ships for sale in the store", action="store_true")
+parser.add_argument('-a', '--allships', help="Show all ships in the upgrade database", action="store_true")
 parser.add_argument('-wd', '--watchdelay', dest='watchdelay', type=int, help='The delay you want to sniff the store at', default=10)
 args = parser.parse_args()
 
@@ -103,7 +103,7 @@ variables_upgrades = """{
     }
   ]
 }"""
-query_standalone="""query GetBrowseListingQuery($storeFront: String, $query: SearchQuery) {
+query_standalone="""mutation UpdateCatalogQueryMutation($storeFront: String, $query: SearchQuery!) {
   store(name: $storeFront, browse: true) {
     listing: search(query: $query) {
       resources {
@@ -291,33 +291,24 @@ fragment TyBundleProductFragment on TyProduct {
 }"""
 variables_standalone="""{
   "query": {
+    "page": 1,
+    "sort": {
+      "field": "weight",
+      "direction": "desc"
+    },
     "skus": {
       "products": [
         "72"
       ]
     },
-    "limit": 2500,
-    "page": 1,
-    "sort": {
-      "field": "weight",
-      "direction": "desc"
-    }
-  },
-  "storeFront": "pledge"
+    "limit": 2500
+  }
 }
 """
 query_allships="""query initShipUpgrade {
   ships {
     id
     name
-    medias {
-      productThumbMediumAndSmall
-      slideShow
-    }
-    manufacturer {
-      id
-      name
-    }
     focus
     type
     flyableStatus
@@ -335,28 +326,6 @@ query_allships="""query initShipUpgrade {
       limitedTimeOffer
     }
   }
-  manufacturers {
-    id
-    name
-  }
-  app {
-    version
-    env
-    cookieName
-    sentryDSN
-    pricing {
-      currencyCode
-      currencySymbol
-      exchangeRate
-      taxRate
-      isTaxInclusive
-    }
-    mode
-    isAnonymous
-    buyback {
-      credit
-    }
-  }
 }"""
 variables_allships=""""""
 
@@ -366,11 +335,12 @@ headers_standalone = ['id', 'name', 'price', 'discount', 'edition', 'unlimitedst
 tableData_standalone = []
 headers_allships = ['id', 'flyableStatus', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'limitedTimeOffer']
 tableData_allships = []
-storedJsonData = 0
+
 
 patterns = [
     ('True', lambda text: style(text, fg='white', bg='green')),
     ('False', lambda text: style(text, fg='white', bg='red')),
+    ('None', lambda text: style(text, fg='white', bg='red')),
     ('Warbond', lambda text: style(text, fg='white', bg='yellow')),
     ('.+Upgrade', lambda text: style(text, fg='white', bg='blue'))
 ]
@@ -393,8 +363,8 @@ while True:
             print("UPGRADE QUERY: PASS")
         else:
             print("UPGRADE QUERY: {}".format(queryUpgradeSystem.status_code))
-        jsonData = queryUpgradeSystem.json()
-        for i in jsonData['data']['to']['ships']:
+        upgradeJsonData = queryUpgradeSystem.json()
+        for i in upgradeJsonData['data']['to']['ships']:
             for j in i['skus']:
                 tableData_upgrades.append([j['items'][0]['title'],
                 j['price']/100,
@@ -410,8 +380,8 @@ while True:
             print("STANDALONE QUERY: PASS")
         else:
             print("STANDALONE QUERY: {}".format(queryStandalone.status_code))
-        jsonData = queryStandalone.json()
-        for i in jsonData['data']['store']['listing']['resources']:
+        standaloneJsonData = queryStandalone.json()
+        for i in standaloneJsonData['data']['store']['listing']['resources']:
             tableData_standalone.append([i['id'],
             i['name'],
             i['price']['amount']/100,
@@ -429,14 +399,14 @@ while True:
             print("ALLSHIPS QUERY: PASS")
         else:
             print("ALLSHIPS QUERY: {}".format(queryAllShips.status_code))
-        jsonData = queryAllShips.json()
-        for i in jsonData['data']['ships']:
+        allshipsJsonData = queryAllShips.json()
+        for i in allshipsJsonData['data']['ships']:
             if i['skus']:
                 for j in i['skus']:
                     tableData_allships.append([j['id'],
                     i['flyableStatus'],
                     i['name'],
-                    i['msrp']/100,
+                    j['price']/100,
                     j['title'],
                     j['unlimitedStock'],
                     j['availableStock'],
