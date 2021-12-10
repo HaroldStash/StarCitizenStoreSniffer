@@ -9,6 +9,7 @@ from click import style
 parser = argparse.ArgumentParser(description='RSI Store Parser')
 parser.add_argument('-u', '--upgrade', help="Show all available upgrades", action="store_true")
 parser.add_argument('-s', '--standalone', help="Show all available standalone ships", action="store_true")
+parser.add_argument('-a', '--allships', help="Show all ships in the database", action="store_true")
 parser.add_argument('-wd', '--watchdelay', dest='watchdelay', type=int, help='The delay you want to sniff the store at', default=10)
 args = parser.parse_args()
 
@@ -305,11 +306,66 @@ variables_standalone="""{
   "storeFront": "pledge"
 }
 """
+query_allships="""query initShipUpgrade {
+  ships {
+    id
+    name
+    medias {
+      productThumbMediumAndSmall
+      slideShow
+    }
+    manufacturer {
+      id
+      name
+    }
+    focus
+    type
+    flyableStatus
+    owned
+    msrp
+    link
+    skus {
+      id
+      title
+      available
+      price
+      body
+      unlimitedStock
+      availableStock
+      limitedTimeOffer
+    }
+  }
+  manufacturers {
+    id
+    name
+  }
+  app {
+    version
+    env
+    cookieName
+    sentryDSN
+    pricing {
+      currencyCode
+      currencySymbol
+      exchangeRate
+      taxRate
+      isTaxInclusive
+    }
+    mode
+    isAnonymous
+    buyback {
+      credit
+    }
+  }
+}"""
+variables_allships=""""""
 
 headers_upgrades = ['name', 'price', 'edition', 'unlimitedStock', 'availableStock', 'limitedTimeOffer']
 tableData_upgrades = []
-headers_standalone = ['id', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty']
+headers_standalone = ['id', 'name', 'price', 'discount', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty']
 tableData_standalone = []
+headers_allships = ['id', 'flyableStatus', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'limitedTimeOffer']
+tableData_allships = []
 storedJsonData = 0
 
 patterns = [
@@ -354,11 +410,12 @@ while True:
             print("STANDALONE QUERY: PASS")
         else:
             print("STANDALONE QUERY: {}".format(queryStandalone.status_code))
-        jsonData = queryStandalone.json()#headers_standalone = ['id', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty']
+        jsonData = queryStandalone.json()
         for i in jsonData['data']['store']['listing']['resources']:
             tableData_standalone.append([i['id'],
             i['name'],
             i['price']['amount']/100,
+            i['price']['discounted'],
             "Warbond" if i['isWarbond'] else "Standard",
             i['stock']['unlimited'],
             i['stock']['qty'],
@@ -366,7 +423,35 @@ while True:
             i['stock']['backOrderQty']])
         table = columnar(tableData_standalone, headers_standalone,patterns=patterns, no_borders=False)
         print(table)
-
+    if args.allships:
+        queryAllShips = requests.post(api_url_upgrades, json={'query': query_allships}, cookies=setToken.cookies)
+        if queryAllShips.status_code == 200:
+            print("ALLSHIPS QUERY: PASS")
+        else:
+            print("ALLSHIPS QUERY: {}".format(queryAllShips.status_code))
+        jsonData = queryAllShips.json()
+        for i in jsonData['data']['ships']:
+            if i['skus']:
+                for j in i['skus']:
+                    tableData_allships.append([j['id'],
+                    i['flyableStatus'],
+                    i['name'],
+                    i['msrp']/100,
+                    j['title'],
+                    j['unlimitedStock'],
+                    j['availableStock'],
+                    j['limitedTimeOffer']])
+            else:
+                    tableData_allships.append(["None",
+                    i['flyableStatus'],
+                    i['name'],
+                    i['msrp']/100,
+                    "None",
+                    "None",
+                    "None",
+                    "None"])
+        table = columnar(tableData_allships, headers_allships ,patterns=patterns, no_borders=False)
+        print(table)
 
     
     time.sleep(args.watchdelay)
