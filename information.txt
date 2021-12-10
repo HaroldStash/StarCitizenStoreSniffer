@@ -1,0 +1,19 @@
+Random image API
+https://loremflickr.com/320/240/rsi?t=${o.random.number()}
+returns a random image
+
+Ship upgrade API
+https://robertsspaceindustries.com/pledge-store/api/upgrade
+{"status":"ok"}
+
+Ship upgrade graphql
+https://robertsspaceindustries.com/pledge-store/api/upgrade/graphql
+GET query missing.
+
+graphql
+https://robertsspaceindustries.com/graphql
+{"errors":[{"message":"GraphQL Request must include at least one of those two parameters: \"query\" or \"queryId\"","extensions":{"category":"request"}}]}
+
+
+
+
