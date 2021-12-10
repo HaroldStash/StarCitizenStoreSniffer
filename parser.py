@@ -80,8 +80,11 @@ variables = """{
   ]
 }"""
 
+headers = ['name', 'price']
+tableData = []
+
 setToken = requests.post(api_settoken)
-if setToken.status_code is 200:
+if setToken.status_code == 200:
     print("SET TOKEN: PASS")
 else:
     print("SET TOKEN ERROR: {}".format(setToken.status_code))
@@ -93,14 +96,21 @@ else:
 
 while True:
     queryUpgradeSystem = requests.post(api_url, json={'query': filterShips, 'variables': variables}, cookies=setToken.cookies)
-    if queryUpgradeSystem.status_code is 200:
+    if queryUpgradeSystem.status_code == 200:
         print("UPGRADE QUERY: PASS")
     else:
         print("UPGRADE QUERY: {}".format(queryUpgradeSystem.status_code))
     #print(queryUpgradeSystem.text)
 
-    data = queryUpgradeSystem.json()
-    for i in data['data']['to']['ships']:
-        print("{}\n-${}".format(colored(i['skus'][0]['items'][0]['title'], "yellow"), i['skus'][0]['price']/100))
-    print(len(data['data']['to']['ships']))
+    jsonData = queryUpgradeSystem.json()
+    #for i in jsonData['data']['to']['ships']:
+    #    print("{}\n-${}".format(colored(i['skus'][0]['items'][0]['title'], "yellow"), i['skus'][0]['price']/100))
+    #print(len(jsonData['data']['to']['ships']))
+    buildIndex = 0
+    for i in jsonData['data']['to']['ships']:
+        tableData.append([colored(i['skus'][0]['items'][0]['title'], "yellow"), i['skus'][0]['price']/100])
+        buildIndex += 1
+    table = columnar(tableData, headers, no_borders=True)
+    print(table)
+    
     time.sleep(args.watchdelay)
