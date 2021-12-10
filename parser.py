@@ -14,11 +14,31 @@ args = parser.parse_args()
 
 api_settoken = "https://robertsspaceindustries.com/api/account/v2/setAuthToken"
 api_settokencontext = "https://robertsspaceindustries.com/api/ship-upgrades/setContextToken?fromShipId&pledgeId&toShipId&toSkuId"
-api_url = "https://robertsspaceindustries.com/pledge-store/api/upgrade/graphql"
+api_url_upgrades = "https://robertsspaceindustries.com/pledge-store/api/upgrade/graphql"
+api_url_standalone = "https://robertsspaceindustries.com/graphql"
 query_upgrades = """query filterShips($fromId: Int, $toId: Int, $fromFilters: [FilterConstraintValues], $toFilters: [FilterConstraintValues]) {
   from(to: $toId, filters: $fromFilters) {
     ships {
       id
+      skus {
+      id
+      title
+      price
+      upgradePrice
+      unlimitedStock
+      showStock
+      available
+      availableStock
+      limitedTimeOffer
+      body
+      items {
+        id
+        title
+      }
+      medias {
+        storeThumbSkuDetail
+      }
+    }
     }
   }
   to(from: $fromId, filters: $toFilters) {
@@ -54,6 +74,7 @@ skus {
     }
   }
 }
+
 """
 variables_upgrades = """{
   "fromId": 0,
@@ -285,14 +306,16 @@ variables_standalone="""{
 }
 """
 
-headers = ['name', 'price', 'edition', 'unlimitedStock', 'availableStock', 'limitedTimeOffer']
-tableData = []
+headers_upgrades = ['name', 'price', 'edition', 'unlimitedStock', 'availableStock', 'limitedTimeOffer']
+tableData_upgrades = []
+headers_standalone = ['id', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty']
+tableData_standalone = []
 storedJsonData = 0
 
 patterns = [
     ('True', lambda text: style(text, fg='white', bg='green')),
     ('False', lambda text: style(text, fg='white', bg='red')),
-    ('Warbond Edition', lambda text: style(text, fg='white', bg='yellow')),
+    ('Warbond', lambda text: style(text, fg='white', bg='yellow')),
     ('.+Upgrade', lambda text: style(text, fg='white', bg='blue'))
 ]
 
@@ -309,31 +332,41 @@ else:
 
 while True:
     if args.upgrade:
-        queryUpgradeSystem = requests.post(api_url, json={'query': query_upgrades, 'variables': variables_upgrades}, cookies=setToken.cookies)
+        queryUpgradeSystem = requests.post(api_url_upgrades, json={'query': query_upgrades, 'variables': variables_upgrades}, cookies=setToken.cookies)
         if queryUpgradeSystem.status_code == 200:
             print("UPGRADE QUERY: PASS")
         else:
             print("UPGRADE QUERY: {}".format(queryUpgradeSystem.status_code))
         jsonData = queryUpgradeSystem.json()
+        for i in jsonData['data']['to']['ships']:
+            for j in i['skus']:
+                tableData_upgrades.append([j['items'][0]['title'],
+                j['price']/100,
+                j['title'],
+                j['unlimitedStock'],
+                j['availableStock'],
+                j['limitedTimeOffer']])
+        table = columnar(tableData_upgrades, headers_upgrades,patterns=patterns, no_borders=False)
+        print(table)
     if args.standalone:
-        queryUpgradeSystem = requests.post(api_url, json={'query': query_standalone, 'variables': variables_standalone}, cookies=setToken.cookies)
-        if queryUpgradeSystem.status_code == 200:
+        queryStandalone = requests.post(api_url_standalone, json={'query': query_standalone, 'variables': variables_standalone}, cookies=setToken.cookies)
+        if queryStandalone.status_code == 200:
             print("STANDALONE QUERY: PASS")
         else:
-            print("STANDALONE QUERY: {}".format(queryUpgradeSystem.status_code))
-        jsonData = queryUpgradeSystem.json()
-    #for i in jsonData['data']['to']['ships']:
-    #    print("{}\n-${}".format(colored(i['skus'][0]['items'][0]['title'], "yellow"), i['skus'][0]['price']/100))
-    #print(len(jsonData['data']['to']['ships']))
-    for i in jsonData['data']['to']['ships']:
-        for j in i['skus']:
-            tableData.append([j['items'][0]['title'],
-            j['price']/100,
-            j['title'],
-            j['unlimitedStock'],
-            j['availableStock'],
-            j['limitedTimeOffer']])
-    table = columnar(tableData, headers,patterns=patterns, no_borders=False)
-    print(table)
+            print("STANDALONE QUERY: {}".format(queryStandalone.status_code))
+        jsonData = queryStandalone.json()#headers_standalone = ['id', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty']
+        for i in jsonData['data']['store']['listing']['resources']:
+            tableData_standalone.append([i['id'],
+            i['name'],
+            i['price']['amount']/100,
+            "Warbond" if i['isWarbond'] else "Standard",
+            i['stock']['unlimited'],
+            i['stock']['qty'],
+            i['stock']['backOrder'],
+            i['stock']['backOrderQty']])
+        table = columnar(tableData_standalone, headers_standalone,patterns=patterns, no_borders=False)
+        print(table)
+
+
     
     time.sleep(args.watchdelay)
