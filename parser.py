@@ -5,12 +5,13 @@ from termcolor import colored
 import requests
 from columnar import columnar
 from click import style
+import datetime
 
 parser = argparse.ArgumentParser(description='RSI Store Parser')
 parser.add_argument('-u', '--upgrade', help="Show all available upgrades for sale in the store", action="store_true")
 parser.add_argument('-s', '--standalone', help="Show all available standalone ships for sale in the store", action="store_true")
 parser.add_argument('-a', '--allships', help="Show all ships in the upgrade database", action="store_true")
-parser.add_argument('-wd', '--watchdelay', dest='watchdelay', type=int, help='The delay you want to sniff the store at', default=10)
+parser.add_argument('-wd', '--watchdelay', dest='watchdelay', type=int, help='The delay you want to sniff the store at', default=5)
 args = parser.parse_args()
 
 api_settoken = "https://robertsspaceindustries.com/api/account/v2/setAuthToken"
@@ -331,18 +332,24 @@ variables_allships=""""""
 
 headers_upgrades = ['name', 'price', 'edition', 'unlimitedStock', 'availableStock', 'limitedTimeOffer']
 tableData_upgrades = []
+
 headers_standalone = ['id', 'name', 'price', 'discount', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty']
 tableData_standalone = []
+
 headers_allships = ['id', 'flyableStatus', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'limitedTimeOffer']
 tableData_allships = []
 
+last_allshipsJson = {'data'}
+dataMatches = True
+firstQuery = True
 
 patterns = [
     ('True', lambda text: style(text, fg='white', bg='green')),
     ('False', lambda text: style(text, fg='white', bg='red')),
-    ('None', lambda text: style(text, fg='white', bg='red')),
+    ('None', lambda text: style(text, fg='black', bg='white')),
     ('Warbond', lambda text: style(text, fg='white', bg='yellow')),
-    ('.+Upgrade', lambda text: style(text, fg='white', bg='blue'))
+    ('.+Upgrade', lambda text: style(text, fg='white', bg='blue')),
+    ('<<.+', lambda text: style(text, fg='white', bg='magenta'))
 ]
 
 setToken = requests.post(api_settoken)
@@ -355,6 +362,13 @@ else:
 #setTokenContext = requests.post(api_settokencontext)
 #print(setTokenContext.status_code)
 #print(setTokenContext.text)
+
+
+def writeDataFile(filetype, data):
+    f = open("data/{}_{}.txt".format(filetype, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")), "w")
+    json.dump(data,f)
+    #f.write(data)
+    f.close()
 
 while True:
     if args.upgrade:
@@ -400,28 +414,62 @@ while True:
         else:
             print("ALLSHIPS QUERY: {}".format(queryAllShips.status_code))
         allshipsJsonData = queryAllShips.json()
-        for i in allshipsJsonData['data']['ships']:
-            if i['skus']:
-                for j in i['skus']:
-                    tableData_allships.append([j['id'],
-                    i['flyableStatus'],
-                    i['name'],
-                    j['price']/100,
-                    j['title'],
-                    j['unlimitedStock'],
-                    j['availableStock'],
-                    j['limitedTimeOffer']])
+        if firstQuery:
+            firstQuery = False
+            last_allshipsJson = allshipsJsonData
+            writeDataFile('allships', allshipsJsonData['data'])
+        if allshipsJsonData['data']:
+            if allshipsJsonData['data'] == last_allshipsJson['data']:
+                dataMatches = True
             else:
-                    tableData_allships.append(["None",
-                    i['flyableStatus'],
-                    i['name'],
-                    i['msrp']/100,
-                    "None",
-                    "None",
-                    "None",
-                    "None"])
-        table = columnar(tableData_allships, headers_allships ,patterns=patterns, no_borders=False)
-        print(table)
+                dataMatches = False
+                print("data doesnt match")
+                writeDataFile('allships', allshipsJsonData['data'])
+            shipIndex = 0
+            if allshipsJsonData['data']['ships']:
+                for i in allshipsJsonData['data']['ships']:
+                    flyableStatus = i['flyableStatus']
+                    shipName = i['name']
+                    if i['skus'] and len(i['skus']) > 0:
+                        skuIndex = 0
+                        for j in i['skus']:
+                            shipId = j['id']
+                            shipPrice = j['price']/100
+                            shipEdition = j['title']
+                            shipUnlimitedStock = j['unlimitedStock']
+                            shipAvailableStock = j['availableStock']
+                            shipLimitedTimeOffer = j['limitedTimeOffer']
+
+                            tableData_allships.append([shipId,
+                            flyableStatus,
+                            shipName,
+                            shipPrice,
+                            shipEdition,
+                            shipUnlimitedStock,
+                            shipAvailableStock,
+                            shipLimitedTimeOffer])
+
+                            skuIndex += 1
+
+                    elif i['skus'] == None or len(i['skus']) < 1:
+                            tableData_allships.append(["None",
+                            flyableStatus,
+                            shipName,
+                            i['msrp']/100,
+                            "None",
+                            "None",
+                            "None",
+                            "None"])
+
+                    shipIndex += 1
+                table = columnar(tableData_allships, headers_allships ,patterns=patterns, no_borders=False)
+                print(table)
+                tableData_allships = []
+                last_allshipsJson = allshipsJsonData
+            else:
+                print("There were no ships returned {}".format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")))
+        else:
+            print("There was no 'data' returned {}".format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")))
 
     
     time.sleep(args.watchdelay)

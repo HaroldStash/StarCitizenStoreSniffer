@@ -1,0 +1,17 @@
+
+query filtersfrom($id: Int, $filters: [FilterConstraintValues]) {
+  from(to: $id, filters: $filters) {
+    filters {
+      title
+      value
+      type
+      options {
+        title
+        value
+        selected
+        available
+      }
+    }
+    count
+  }
+}
