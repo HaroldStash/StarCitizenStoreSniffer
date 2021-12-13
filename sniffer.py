@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description='RSI Store Parser')
 parser.add_argument('-u', '--upgrade', help="Show all available upgrades for sale in the store", action="store_true")
 parser.add_argument('-s', '--standalone', help="Show all available standalone ships for sale in the store", action="store_true")
 parser.add_argument('-a', '--allships', help="Show all ships in the upgrade database", action="store_true")
-parser.add_argument('-wd', '--watchdelay', dest='watchdelay', type=int, help='The delay you want to sniff the store at', default=5)
+parser.add_argument('-wd', '--watchdelay', dest='watchdelay', type=int, help='The delay you want to sniff the store at', default=25)
 args = parser.parse_args()
 
 api_settoken = "https://robertsspaceindustries.com/api/account/v2/setAuthToken"
@@ -81,7 +81,6 @@ skus {
     }
   }
 }
-
 """
 variables_upgrades = """{
   "fromId": 0,
@@ -336,9 +335,9 @@ query_allships="""query initShipUpgrade {
   }
 }"""
 variables_allships="{}"
-maxPadHeight = 1000
+maxPadHeight = 2500
 
-headers_upgrades = ['name', 'price', 'edition', 'unlimitedStock', 'availableStock', 'limitedTimeOffer']
+headers_upgrades = ['id', 'name', 'price', 'extras', 'edition', 'unlimitedStock', 'availableStock', 'limitedTimeOffer']
 headers_standalone = ['id', 'name', 'price', 'discount', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty', 'vip']
 headers_allships = ['id', 'flyableStatus', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'limitedTimeOffer']
 
@@ -363,84 +362,6 @@ cookies = browser_cookie3.chrome(cookie_file="C:\\Users\Harold\\AppData\\Local\\
 #print(setTokenContext.status_code)
 #print(setTokenContext.text)
 
-
-
-"""
-FUNCTION FOR UPGRADE TABLE
-        for i in upgradeJsonData['data']['to']['ships']:
-            for j in i['skus']:
-                tableData_upgrades.append([j['items'][0]['title'],
-                j['price']/100,
-                j['title'],
-                j['unlimitedStock'],
-                j['availableStock'],
-                j['limitedTimeOffer']])
-                
-FUNCTION FOR STANDALONE TABLE
-        for i in standaloneJsonData['data']['store']['listing']['resources']:
-            tableData_standalone.append([i['id'],
-            i['name'],
-            i['price']['amount']/100,
-            i['price']['discounted'],
-            "Warbond Edition" if i['isWarbond'] else "Warbond Edition",
-            i['stock']['unlimited'],
-            i['stock']['qty'],
-            i['stock']['backOrder'],
-            i['stock']['backOrderQty'],
-            i['isVip']])
-FUNCTION FOR ALL SHIPS
-            shipIndex = 0
-            if allshipsJsonData['data']['ships']:
-                for i in allshipsJsonData['data']['ships']:
-                    flyableStatus = i['flyableStatus']
-                    shipName = i['name']
-                    if i['skus'] and len(i['skus']) > 0:
-                        skuIndex = 0
-                        for j in i['skus']:
-                            shipId = j['id']
-                            shipPrice = j['price']/100
-                            shipEdition = j['title']
-                            shipUnlimitedStock = j['unlimitedStock']
-                            shipAvailableStock = j['availableStock']
-                            shipLimitedTimeOffer = j['limitedTimeOffer']
-
-                            tableData_allships.append([shipId,
-                            flyableStatus,
-                            shipName,
-                            shipPrice,
-                            shipEdition,
-                            shipUnlimitedStock,
-                            shipAvailableStock,
-                            shipLimitedTimeOffer])
-
-                            skuIndex += 1
-
-                    elif i['skus'] == None or len(i['skus']) < 1:
-                            tableData_allships.append(["None",
-                            flyableStatus,
-                            shipName,
-                            i['msrp']/100,
-                            "None",
-                            "None",
-                            "None",
-                            "None"])
-                    shipIndex += 1
-                    
-#table = columnar(tableData_upgrades, headers_upgrades,patterns=patterns, no_borders=False)
-#print(table)
-
-        if firstQuery:
-            firstQuery = False
-            last_standaloneJson = standaloneJsonData
-            writeDataFile('standalone', standaloneJsonData['data'])
-        if standaloneJsonData['data'] == last_standaloneJson['data']:
-            dataMatches = True
-        else:
-            dataMatches = False
-            print("data doesnt match")
-            writeDataFile('standalone', standaloneJsonData['data'])
-            
-"""
 def writeDataFile(nametype, data):
     fileName = "data/{}_{}.txt".format(nametype, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     f = open(fileName, "w")
@@ -508,20 +429,21 @@ def main(stdscr):
     while True:
         if time.time() > lastTime + args.watchdelay:
             setToken = querySetToken()
-            json_Upgrade = queryGraphQLForJson(0, "UPGRADE", api_url_upgrades, query_upgrades, variables_upgrades, setToken.cookies)
             json_Standalone = queryGraphQLForJson(1, "STANDALONE", api_url_standalone, query_standalone, variables_standalone, cookies)
             json_Allship = queryGraphQLForJson(2, "ALLSHIPS", api_url_upgrades, query_allships, variables_allships, setToken.cookies)
+            json_Upgrade = queryGraphQLForJson(0, "UPGRADE", api_url_upgrades, query_upgrades, variables_upgrades, setToken.cookies)
             if firstQuery:
                 firstQuery = False
                 previous_json_Upgrade = json_Upgrade
                 previous_json_Standalone = json_Standalone
                 previous_json_Allship = json_Allship
-                writeDataFile("UPGRADE", json_Upgrade['data'])
-                writeDataFile("STANDALONE", json_Standalone['data'])
-                writeDataFile("ALLSHIPS", json_Allship['data'])
+                writeDataFile("UPGRADE", json_Upgrade)
+                writeDataFile("STANDALONE", json_Standalone)
+                writeDataFile("ALLSHIPS", json_Allship)
             doesPreviousJsonEqualCurrent("UPGRADE", previous_json_Upgrade, json_Upgrade)
             doesPreviousJsonEqualCurrent("STANDALONE", previous_json_Standalone, json_Standalone)
             doesPreviousJsonEqualCurrent("ALLSHIPS", previous_json_Allship, json_Allship)
+            shipInfoPadIndex = 1
 ############################STANDALONE############################
             if args.standalone:
                 for i in json_Standalone['data']['store']['listing']['resources']:
@@ -539,11 +461,77 @@ def main(stdscr):
                 #print(table)
                 tableData = []
 
-                index = 1
                 pad.addstr(0, 0, "STANDALONE SHIPS:", curses.COLOR_WHITE)
                 for line in table.split('\n'):
-                    pad.addstr(index, 0, line, curses.COLOR_WHITE)
-                    index += 1
+                    pad.addstr(shipInfoPadIndex, 0, line, curses.COLOR_WHITE)
+                    shipInfoPadIndex += 1
+#################################################################
+############################ALLSHIPS#############################
+            if args.allships:
+                if json_Allship['data']['ships']:
+                    for i in json_Allship['data']['ships']:
+                        flyableStatus = i['flyableStatus']
+                        shipName = i['name']
+                        if i['skus'] and len(i['skus']) > 0:
+                            for j in i['skus']:
+                                shipId = j['id']
+                                shipPrice = j['price']/100
+                                shipEdition = j['title']
+                                shipUnlimitedStock = j['unlimitedStock']
+                                shipAvailableStock = j['availableStock']
+                                shipLimitedTimeOffer = j['limitedTimeOffer']
+
+                                tableData.append([shipId,
+                                flyableStatus,
+                                shipName,
+                                shipPrice,
+                                shipEdition,
+                                shipUnlimitedStock,
+                                shipAvailableStock,
+                                shipLimitedTimeOffer])
+
+                        elif i['skus'] == None or len(i['skus']) < 1:
+                                tableData.append(["None",
+                                flyableStatus,
+                                shipName,
+                                i['msrp']/100,
+                                "None",
+                                "None",
+                                "None",
+                                "None"])
+                    table = columnar(tableData, headers_standalone, no_borders=False)
+                    #print(table)
+                    tableData = []
+                pad.addstr(shipInfoPadIndex, 0, "ALL SHIPS:", curses.COLOR_WHITE)
+                shipInfoPadIndex += 1
+                for line in table.split('\n'):
+                    pad.addstr(shipInfoPadIndex, 0, line, curses.COLOR_WHITE)
+                    shipInfoPadIndex += 1
+#################################################################
+############################UPGRADES#############################
+            if args.upgrade:
+                if json_Upgrade['data']['to']['ships']:
+                    for i in json_Upgrade['data']['to']['ships']:
+                        if i['skus']:
+                            for j in i['skus']:
+                                tableData.append([j['id'],
+                                j['items'][0]['title'],
+                                j['price']/100,
+                                "" if len(j['items']) < 2 else j['items'][1]['title'],
+                                j['title'],
+                                j['unlimitedStock'],
+                                j['availableStock'],
+                                j['limitedTimeOffer']])
+
+                    table = columnar(tableData, headers_upgrades, no_borders=False)
+                    #print(table)
+                    tableData = []
+
+                pad.addstr(shipInfoPadIndex, 0, "UPGRADES:", curses.COLOR_WHITE)
+                shipInfoPadIndex += 1
+                for line in table.split('\n'):
+                    pad.addstr(shipInfoPadIndex, 0, line, curses.COLOR_WHITE)
+                    shipInfoPadIndex += 1
 #################################################################
             lastTime = time.time()
 
@@ -554,6 +542,10 @@ def main(stdscr):
             scrollPosHeight = clamp(0, (scrollPosHeight + 1), maxPadHeight-1)
         elif keyPress == curses.KEY_UP:
             scrollPosHeight = clamp(0, (scrollPosHeight - 1), maxPadHeight-1)
+        elif  keyPress == curses.KEY_NPAGE:
+            scrollPosHeight = clamp(0, (scrollPosHeight + 45), maxPadHeight-1)
+        elif keyPress == curses.KEY_PPAGE:
+            scrollPosHeight = clamp(0, (scrollPosHeight - 45), maxPadHeight-1)
         elif  keyPress == curses.KEY_LEFT:
             scrollPosWidth = clamp(0, (scrollPosWidth - 1), curses.COLS-1)
         elif keyPress == curses.KEY_RIGHT:
