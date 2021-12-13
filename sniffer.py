@@ -339,7 +339,7 @@ maxPadHeight = 2500
 
 headers_upgrades = ['id', 'name', 'price', 'extras', 'edition', 'unlimitedStock', 'availableStock', 'limitedTimeOffer']
 headers_standalone = ['id', 'name', 'price', 'discount', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty', 'vip']
-headers_allships = ['id', 'flyableStatus', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'limitedTimeOffer']
+headers_allships = ['id', 'sku', 'flyableStatus', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'limitedTimeOffer']
 
 previous_json_Upgrade = {'data'}
 previous_json_Allship = {'data'}
@@ -447,7 +447,8 @@ def main(stdscr):
 ############################STANDALONE############################
             if args.standalone:
                 for i in json_Standalone['data']['store']['listing']['resources']:
-                    tableData.append([i['id'],
+                    tableData.append([
+                    i['id'],
                     i['name'],
                     i['price']['amount']/100,
                     i['price']['discounted'],
@@ -472,16 +473,24 @@ def main(stdscr):
                     for i in json_Allship['data']['ships']:
                         flyableStatus = i['flyableStatus']
                         shipName = i['name']
+                        shipId = i['id']
                         if i['skus'] and len(i['skus']) > 0:
+                            skuIndex = 0
                             for j in i['skus']:
-                                shipId = j['id']
+                                shipSku = j['id']
                                 shipPrice = j['price']/100
                                 shipEdition = j['title']
                                 shipUnlimitedStock = j['unlimitedStock']
                                 shipAvailableStock = j['availableStock']
                                 shipLimitedTimeOffer = j['limitedTimeOffer']
 
-                                tableData.append([shipId,
+                                if len(tableData) > 0:
+                                    if shipId == tableData[len(tableData)-1][0]:
+                                        shipId = ""
+
+                                tableData.append([
+                                shipId,
+                                shipSku,
                                 flyableStatus,
                                 shipName,
                                 shipPrice,
@@ -490,8 +499,11 @@ def main(stdscr):
                                 shipAvailableStock,
                                 shipLimitedTimeOffer])
 
-                        elif i['skus'] == None or len(i['skus']) < 1:
-                                tableData.append(["None",
+                                skuIndex += 1
+                        else:
+                                tableData.append([
+                                "None",
+                                shipSku,
                                 flyableStatus,
                                 shipName,
                                 i['msrp']/100,
@@ -499,7 +511,8 @@ def main(stdscr):
                                 "None",
                                 "None",
                                 "None"])
-                    table = columnar(tableData, headers_standalone, no_borders=False)
+
+                    table = columnar(tableData, headers_allships, no_borders=False)
                     #print(table)
                     tableData = []
                 pad.addstr(shipInfoPadIndex, 0, "ALL SHIPS:", curses.COLOR_WHITE)
@@ -510,11 +523,12 @@ def main(stdscr):
 #################################################################
 ############################UPGRADES#############################
             if args.upgrade:
-                if json_Upgrade['data']['to']['ships']:
-                    for i in json_Upgrade['data']['to']['ships']:
+                if json_Upgrade['data']['from']['ships']:
+                    for i in json_Upgrade['data']['from']['ships']:
                         if i['skus']:
                             for j in i['skus']:
-                                tableData.append([j['id'],
+                                tableData.append([
+                                j['id'],
                                 j['items'][0]['title'],
                                 j['price']/100,
                                 "" if len(j['items']) < 2 else j['items'][1]['title'],
@@ -527,7 +541,7 @@ def main(stdscr):
                     #print(table)
                     tableData = []
 
-                pad.addstr(shipInfoPadIndex, 0, "UPGRADES:", curses.COLOR_WHITE)
+                pad.addstr(shipInfoPadIndex, 0, "UPGRADES: {} total items".format(len(json_Upgrade['data']['from']['ships'])), curses.COLOR_WHITE)
                 shipInfoPadIndex += 1
                 for line in table.split('\n'):
                     pad.addstr(shipInfoPadIndex, 0, line, curses.COLOR_WHITE)
