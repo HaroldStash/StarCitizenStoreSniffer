@@ -6,6 +6,11 @@ import requests
 from columnar import columnar
 from click import style
 import datetime
+import browser_cookie3
+import curses
+from curses import wrapper
+import os
+import random
 
 parser = argparse.ArgumentParser(description='RSI Store Parser')
 parser.add_argument('-u', '--upgrade', help="Show all available upgrades for sale in the store", action="store_true")
@@ -299,7 +304,9 @@ variables_standalone="""{
     },
     "skus": {
       "products": [
-        "72"
+        "72",
+        "268",
+        "270"
       ]
     },
     "limit": 2500
@@ -328,56 +335,38 @@ query_allships="""query initShipUpgrade {
     }
   }
 }"""
-variables_allships=""""""
+variables_allships="{}"
+maxPadHeight = 1000
 
 headers_upgrades = ['name', 'price', 'edition', 'unlimitedStock', 'availableStock', 'limitedTimeOffer']
-tableData_upgrades = []
-
-headers_standalone = ['id', 'name', 'price', 'discount', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty']
-tableData_standalone = []
-
+headers_standalone = ['id', 'name', 'price', 'discount', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty', 'vip']
 headers_allships = ['id', 'flyableStatus', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'limitedTimeOffer']
-tableData_allships = []
 
-last_allshipsJson = {'data'}
-dataMatches = True
-firstQuery = True
+previous_json_Upgrade = {'data'}
+previous_json_Allship = {'data'}
+previous_json_Standalone = {'data'}
 
 patterns = [
     ('True', lambda text: style(text, fg='white', bg='green')),
     ('False', lambda text: style(text, fg='white', bg='red')),
     ('None', lambda text: style(text, fg='black', bg='white')),
-    ('Warbond', lambda text: style(text, fg='white', bg='yellow')),
+    ('.+Warbond', lambda text: style(text, fg='white', bg='yellow')),
     ('.+Upgrade', lambda text: style(text, fg='white', bg='blue')),
-    ('<<.+', lambda text: style(text, fg='white', bg='magenta'))
+    ('.+Paint', lambda text: style(text, fg='white', bg='magenta'))
 ]
 
-setToken = requests.post(api_settoken)
-if setToken.status_code == 200:
-    print("SET TOKEN: PASS")
-else:
-    print("SET TOKEN ERROR: {}".format(setToken.status_code))
-#print(setToken.cookies)
+stdscr = curses.initscr()
+cookies = browser_cookie3.chrome(cookie_file="C:\\Users\Harold\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Network\\Cookies", domain_name="robertsspaceindustries.com")
+#cookies = browser_cookie3.chrome()
 
-#setTokenContext = requests.post(api_settokencontext)
+#setTokenContext = requests.post(api_settokencontext, cookies=setToken.cookies)
 #print(setTokenContext.status_code)
 #print(setTokenContext.text)
 
 
-def writeDataFile(filetype, data):
-    f = open("data/{}_{}.txt".format(filetype, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")), "w")
-    json.dump(data,f)
-    #f.write(data)
-    f.close()
 
-while True:
-    if args.upgrade:
-        queryUpgradeSystem = requests.post(api_url_upgrades, json={'query': query_upgrades, 'variables': variables_upgrades}, cookies=setToken.cookies)
-        if queryUpgradeSystem.status_code == 200:
-            print("UPGRADE QUERY: PASS")
-        else:
-            print("UPGRADE QUERY: {}".format(queryUpgradeSystem.status_code))
-        upgradeJsonData = queryUpgradeSystem.json()
+"""
+FUNCTION FOR UPGRADE TABLE
         for i in upgradeJsonData['data']['to']['ships']:
             for j in i['skus']:
                 tableData_upgrades.append([j['items'][0]['title'],
@@ -386,45 +375,20 @@ while True:
                 j['unlimitedStock'],
                 j['availableStock'],
                 j['limitedTimeOffer']])
-        table = columnar(tableData_upgrades, headers_upgrades,patterns=patterns, no_borders=False)
-        print(table)
-    if args.standalone:
-        queryStandalone = requests.post(api_url_standalone, json={'query': query_standalone, 'variables': variables_standalone}, cookies=setToken.cookies)
-        if queryStandalone.status_code == 200:
-            print("STANDALONE QUERY: PASS")
-        else:
-            print("STANDALONE QUERY: {}".format(queryStandalone.status_code))
-        standaloneJsonData = queryStandalone.json()
+                
+FUNCTION FOR STANDALONE TABLE
         for i in standaloneJsonData['data']['store']['listing']['resources']:
             tableData_standalone.append([i['id'],
             i['name'],
             i['price']['amount']/100,
             i['price']['discounted'],
-            "Warbond" if i['isWarbond'] else "Standard",
+            "Warbond Edition" if i['isWarbond'] else "Warbond Edition",
             i['stock']['unlimited'],
             i['stock']['qty'],
             i['stock']['backOrder'],
-            i['stock']['backOrderQty']])
-        table = columnar(tableData_standalone, headers_standalone,patterns=patterns, no_borders=False)
-        print(table)
-    if args.allships:
-        queryAllShips = requests.post(api_url_upgrades, json={'query': query_allships}, cookies=setToken.cookies)
-        if queryAllShips.status_code == 200:
-            print("ALLSHIPS QUERY: PASS")
-        else:
-            print("ALLSHIPS QUERY: {}".format(queryAllShips.status_code))
-        allshipsJsonData = queryAllShips.json()
-        if firstQuery:
-            firstQuery = False
-            last_allshipsJson = allshipsJsonData
-            writeDataFile('allships', allshipsJsonData['data'])
-        if allshipsJsonData['data']:
-            if allshipsJsonData['data'] == last_allshipsJson['data']:
-                dataMatches = True
-            else:
-                dataMatches = False
-                print("data doesnt match")
-                writeDataFile('allships', allshipsJsonData['data'])
+            i['stock']['backOrderQty'],
+            i['isVip']])
+FUNCTION FOR ALL SHIPS
             shipIndex = 0
             if allshipsJsonData['data']['ships']:
                 for i in allshipsJsonData['data']['ships']:
@@ -460,16 +424,140 @@ while True:
                             "None",
                             "None",
                             "None"])
-
                     shipIndex += 1
-                table = columnar(tableData_allships, headers_allships ,patterns=patterns, no_borders=False)
-                print(table)
-                tableData_allships = []
-                last_allshipsJson = allshipsJsonData
-            else:
-                print("There were no ships returned {}".format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")))
-        else:
-            print("There was no 'data' returned {}".format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")))
+                    
+#table = columnar(tableData_upgrades, headers_upgrades,patterns=patterns, no_borders=False)
+#print(table)
 
+        if firstQuery:
+            firstQuery = False
+            last_standaloneJson = standaloneJsonData
+            writeDataFile('standalone', standaloneJsonData['data'])
+        if standaloneJsonData['data'] == last_standaloneJson['data']:
+            dataMatches = True
+        else:
+            dataMatches = False
+            print("data doesnt match")
+            writeDataFile('standalone', standaloneJsonData['data'])
+            
+"""
+def writeDataFile(nametype, data):
+    fileName = "data/{}_{}.txt".format(nametype, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    f = open(fileName, "w")
+    json.dump(data,f)
+    #f.write(data)
+    f.close()
+    return fileName
     
-    time.sleep(args.watchdelay)
+def queryGraphQLForJson(padlocation, nametype, url, query, variables, cookies):
+    query = requests.post(url, json={'query': query, 'variables': variables}, cookies=cookies)
+    if query.status_code == 200:
+        #print("{} QUERY: PASS {}".format(nametype, query.status_code))
+        stdscr.addstr(padlocation, 0, "{} QUERY: PASS {} - {}".format(nametype, query.status_code, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")), curses.color_pair(2) )
+    else:
+        #print("{} QUERY: FAIL {}".format(nametype, query.status_code))
+        stdscr.addstr(padlocation, 0, "{} QUERY: FAIL {} - {}".format(nametype, query.status_code, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")), curses.color_pair(5) )
+    return query.json()
+
+def querySetToken():
+    query = requests.post(api_settoken, cookies=cookies)
+    if query.status_code == 200:
+        stdscr.addstr(0, 50, "SET TOKEN: PASS {} - {}".format(query.status_code, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")), curses.color_pair(2))
+    else:
+        stdscr.addstr(0, 50, "SET TOKEN: FAIL {} - {}".format(query.status_code, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")), curses.color_pair(5))
+    #print(query.cookies)
+    return query
+
+def doesPreviousJsonEqualCurrent(nametype, previous, current):
+    if current['data'] != previous['data']:
+        fileName = writeDataFile(nametype, current['data'])
+        #print("{} does not match, saving copy. {}".format(nametype, fileName))
+        stdscr.addstr(1, 150, "{} does not match, saving copy. {}".format(nametype, fileName), curses.color_pair(5))
+
+def printSeparatorLine():
+    lines = ""
+    for i in range(40):
+        lines = lines + "-"
+    print(lines)
+
+def clamp(minvalue, value, maxvalue):
+    return max(minvalue, min(value, maxvalue))
+
+def main(stdscr):
+    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_WHITE)
+    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_GREEN)
+    curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLUE)
+    curses.init_pair(4, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    curses.init_pair(5, curses.COLOR_RED, curses.COLOR_WHITE)
+    curses.init_pair(6, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    height, width = stdscr.getmaxyx()
+    pad = curses.newpad(maxPadHeight, curses.COLS)
+    pad.bkgd(curses.color_pair(3))
+    firstQuery = True
+    tableData = []
+    scrollPosHeight = 0
+    scrollPosWidth = 0
+
+    pad.refresh(0, 0, 3, 0, curses.LINES-1,curses.COLS-1)
+    stdscr.addstr(height-1, 0, " " * (width - 1), curses.color_pair(1) )
+    stdscr.addstr(height-1, 0, "q - to quit ", curses.color_pair(1) )
+    stdscr.refresh()
+    k = 0
+    stdscr.nodelay(1)
+    lastTime = 0
+    while True:
+        if time.time() > lastTime + args.watchdelay:
+            setToken = querySetToken()
+            json_Upgrade = queryGraphQLForJson(0, "UPGRADE", api_url_upgrades, query_upgrades, variables_upgrades, setToken.cookies)
+            json_Standalone = queryGraphQLForJson(1, "STANDALONE", api_url_standalone, query_standalone, variables_standalone, cookies)
+            json_Allship = queryGraphQLForJson(2, "ALLSHIPS", api_url_upgrades, query_allships, variables_allships, setToken.cookies)
+            if firstQuery:
+                firstQuery = False
+                previous_json_Upgrade = json_Upgrade
+                previous_json_Standalone = json_Standalone
+                previous_json_Allship = json_Allship
+                writeDataFile("UPGRADE", json_Upgrade['data'])
+                writeDataFile("STANDALONE", json_Standalone['data'])
+                writeDataFile("ALLSHIPS", json_Allship['data'])
+            doesPreviousJsonEqualCurrent("UPGRADE", previous_json_Upgrade, json_Upgrade)
+            doesPreviousJsonEqualCurrent("STANDALONE", previous_json_Standalone, json_Standalone)
+            doesPreviousJsonEqualCurrent("ALLSHIPS", previous_json_Allship, json_Allship)
+############################STANDALONE############################
+            if args.standalone:
+                for i in json_Standalone['data']['store']['listing']['resources']:
+                    tableData.append([i['id'],
+                    i['name'],
+                    i['price']['amount']/100,
+                    i['price']['discounted'],
+                    "Warbond Edition" if i['isWarbond'] else "Warbond Edition",
+                    i['stock']['unlimited'],
+                    i['stock']['qty'],
+                    i['stock']['backOrder'],
+                    i['stock']['backOrderQty'],
+                    i['isVip']])
+                table = columnar(tableData, headers_standalone, no_borders=False)
+                #print(table)
+                tableData = []
+
+                index = 1
+                pad.addstr(0, 0, "STANDALONE SHIPS:", curses.COLOR_WHITE)
+                for line in table.split('\n'):
+                    pad.addstr(index, 0, line, curses.COLOR_WHITE)
+                    index += 1
+#################################################################
+            lastTime = time.time()
+
+        keyPress = stdscr.getch()
+        if keyPress == ord('q'):
+            break
+        elif  keyPress == curses.KEY_DOWN:
+            scrollPosHeight = clamp(0, (scrollPosHeight + 1), maxPadHeight-1)
+        elif keyPress == curses.KEY_UP:
+            scrollPosHeight = clamp(0, (scrollPosHeight - 1), maxPadHeight-1)
+        elif  keyPress == curses.KEY_LEFT:
+            scrollPosWidth = clamp(0, (scrollPosWidth - 1), curses.COLS-1)
+        elif keyPress == curses.KEY_RIGHT:
+            scrollPosWidth = clamp(0, (scrollPosWidth + 1), curses.COLS-1)
+        pad.refresh(scrollPosHeight, scrollPosWidth, 3, 0, curses.LINES-2,curses.COLS-1)
+        stdscr.refresh()
+wrapper(main)
