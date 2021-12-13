@@ -296,19 +296,25 @@ fragment TyBundleProductFragment on TyProduct {
 }"""
 variables_standalone="""{
   "query": {
-    "page": 1,
     "sort": {
-      "field": "weight",
-      "direction": "desc"
+      "field": "name",
+      "direction": "asc"
     },
     "skus": {
       "products": [
         "72",
         "268",
-        "270"
+        "289",
+        "270",
+        "3",
+        "41",
+        "60",
+        "9",
+        "45",
+        "46"
       ]
     },
-    "limit": 2500
+    "limit": 10000
   }
 }
 """
@@ -337,8 +343,8 @@ query_allships="""query initShipUpgrade {
 variables_allships="{}"
 maxPadHeight = 2500
 
-headers_upgrades = ['id', 'name', 'price', 'extras', 'edition', 'unlimitedStock', 'availableStock', 'limitedTimeOffer']
-headers_standalone = ['id', 'name', 'price', 'discount', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty', 'vip']
+headers_upgrades = ['sku', 'name', 'price', 'extras', 'edition', 'unlimitedStock', 'availableStock', 'limitedTimeOffer']
+headers_standalone = ['sku', 'name', 'price', 'discount', 'edition', 'unlimitedstock', 'quantity', 'backorder', 'backOrderQty', 'vip']
 headers_allships = ['id', 'sku', 'flyableStatus', 'name', 'price', 'edition', 'unlimitedstock', 'quantity', 'limitedTimeOffer']
 
 previous_json_Upgrade = {'data'}
@@ -451,7 +457,7 @@ def main(stdscr):
                     i['id'],
                     i['name'],
                     i['price']['amount']/100,
-                    i['price']['discounted'],
+                    i['price']['discountDescription'],
                     "Warbond Edition" if i['isWarbond'] else "Warbond Edition",
                     i['stock']['unlimited'],
                     i['stock']['qty'],
@@ -462,7 +468,7 @@ def main(stdscr):
                 #print(table)
                 tableData = []
 
-                pad.addstr(0, 0, "STANDALONE SHIPS:", curses.COLOR_WHITE)
+                pad.addstr(0, 0, "STANDALONE ITEMS: {} total items".format(len(json_Standalone['data']['store']['listing']['resources'])), curses.COLOR_WHITE)
                 for line in table.split('\n'):
                     pad.addstr(shipInfoPadIndex, 0, line, curses.COLOR_WHITE)
                     shipInfoPadIndex += 1
@@ -470,13 +476,15 @@ def main(stdscr):
 ############################ALLSHIPS#############################
             if args.allships:
                 if json_Allship['data']['ships']:
+                    itemCount = 0
+                    skuCount = 0
                     for i in json_Allship['data']['ships']:
                         flyableStatus = i['flyableStatus']
                         shipName = i['name']
                         shipId = i['id']
                         if i['skus'] and len(i['skus']) > 0:
-                            skuIndex = 0
                             for j in i['skus']:
+                                skuCount += 1
                                 shipSku = j['id']
                                 shipPrice = j['price']/100
                                 shipEdition = j['title']
@@ -499,11 +507,11 @@ def main(stdscr):
                                 shipAvailableStock,
                                 shipLimitedTimeOffer])
 
-                                skuIndex += 1
+                                itemCount += 1
                         else:
                                 tableData.append([
+                                shipId,
                                 "None",
-                                shipSku,
                                 flyableStatus,
                                 shipName,
                                 i['msrp']/100,
@@ -511,11 +519,12 @@ def main(stdscr):
                                 "None",
                                 "None",
                                 "None"])
+                                itemCount += 1
 
                     table = columnar(tableData, headers_allships, no_borders=False)
                     #print(table)
                     tableData = []
-                pad.addstr(shipInfoPadIndex, 0, "ALL SHIPS:", curses.COLOR_WHITE)
+                pad.addstr(shipInfoPadIndex, 0, "ALL SHIPS: {} items {} SKUs".format(itemCount, skuCount), curses.COLOR_WHITE)
                 shipInfoPadIndex += 1
                 for line in table.split('\n'):
                     pad.addstr(shipInfoPadIndex, 0, line, curses.COLOR_WHITE)
@@ -523,8 +532,8 @@ def main(stdscr):
 #################################################################
 ############################UPGRADES#############################
             if args.upgrade:
-                if json_Upgrade['data']['from']['ships']:
-                    for i in json_Upgrade['data']['from']['ships']:
+                if json_Upgrade['data']['to']['ships']:
+                    for i in json_Upgrade['data']['to']['ships']:
                         if i['skus']:
                             for j in i['skus']:
                                 tableData.append([
@@ -541,7 +550,7 @@ def main(stdscr):
                     #print(table)
                     tableData = []
 
-                pad.addstr(shipInfoPadIndex, 0, "UPGRADES: {} total items".format(len(json_Upgrade['data']['from']['ships'])), curses.COLOR_WHITE)
+                pad.addstr(shipInfoPadIndex, 0, "UPGRADES: {} total items".format(len(json_Upgrade['data']['to']['ships'])), curses.COLOR_WHITE)
                 shipInfoPadIndex += 1
                 for line in table.split('\n'):
                     pad.addstr(shipInfoPadIndex, 0, line, curses.COLOR_WHITE)
