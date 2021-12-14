@@ -397,7 +397,7 @@ def querySetToken():
 
 def doesPreviousJsonEqualCurrent(nametype, previous, current):
     if current['data'] != previous['data']:
-        fileName = writeDataFile(nametype, current['data'])
+        fileName = writeDataFile(nametype, current)
         #print("{} does not match, saving copy. {}".format(nametype, fileName))
         stdscr.addstr(1, 150, "{} does not match, saving copy. {}".format(nametype, fileName), curses.color_pair(5))
 
@@ -449,6 +449,10 @@ def main(stdscr):
             doesPreviousJsonEqualCurrent("UPGRADE", previous_json_Upgrade, json_Upgrade)
             doesPreviousJsonEqualCurrent("STANDALONE", previous_json_Standalone, json_Standalone)
             doesPreviousJsonEqualCurrent("ALLSHIPS", previous_json_Allship, json_Allship)
+
+            previous_json_Upgrade = json_Upgrade
+            previous_json_Standalone = json_Standalone
+            previous_json_Allship = json_Allship
             shipInfoPadIndex = 1
 ############################STANDALONE############################
             if args.standalone:

@@ -1,0 +1,30 @@
+HEADER:
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+PAYLOAD:
+{
+  "arg": {
+    "qty": 1,
+    "skuId": 14960,
+    "configuration": {
+      "payload": {
+        "fromShipId": 51,
+        "toSkuId": 14960,
+        "price": 30000,
+        "mode": "browse"
+      },
+      "type": "UPGRADE"
+    }
+  },
+  "iat": 1639444865,
+  "exp": 1639444895,
+  "aud": "rsi/cart/bearer",
+  "iss": "https://robertsspaceindustries.com/",
+  "sub": "add",
+  "jti": "Bvt21RwSd641H/SO10JWkKhaaPw="
+}
+
+JWT SOURCE:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcmciOnsicXR5IjoxLCJza3VJZCI6MTQ5NjAsImNvbmZpZ3VyYXRpb24iOnsicGF5bG9hZCI6eyJmcm9tU2hpcElkIjo1MSwidG9Ta3VJZCI6MTQ5NjAsInByaWNlIjozMDAwMCwibW9kZSI6ImJyb3dzZSJ9LCJ0eXBlIjoiVVBHUkFERSJ9fSwiaWF0IjoxNjM5NDQ0ODY1LCJleHAiOjE2Mzk0NDQ4OTUsImF1ZCI6InJzaS9jYXJ0L2JlYXJlciIsImlzcyI6Imh0dHBzOi8vcm9iZXJ0c3NwYWNlaW5kdXN0cmllcy5jb20vIiwic3ViIjoiYWRkIiwianRpIjoiQnZ0MjFSd1NkNjQxSC9TTzEwSldrS2hhYVB3PSJ9.AIbmw1GR2Z0dSQJ-fCvBibo0KeSnNUaORLxEjuA61g8
