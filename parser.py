@@ -79,8 +79,8 @@ def getDifferences(fileType, baseFile, changedFile):
         jsonBaseItems = baseFileJson['data']['ships']
         jsonChangedItems = changedFileJson['data']['ships']
     if fileType == 2:
-        jsonBaseItems = baseFileJson['data']['from']['ships']
-        jsonChangedItems = changedFileJson['data']['from']['ships']
+        jsonBaseItems = baseFileJson['data']['to']['ships']
+        jsonChangedItems = changedFileJson['data']['to']['ships']
 
     addToPad("Base:    {}".format(baseFile), curses.COLOR_WHITE)
     addToPad("Changed: {}".format(changedFile), curses.COLOR_WHITE)
@@ -96,11 +96,50 @@ def getDifferences(fileType, baseFile, changedFile):
                     addToPad("   Resource ID changed: {} to {}".format(baseResource['id'], changedResource['id']), curses.color_pair(6))
         else:
             if resourceInBase != changedResource:
-                propertyIndex = 0
+                itemName = ""
+                if fileType == 0:
+                    itemName = changedResource['name']
+                    itemId = changedResource['id']
+                if fileType == 1:
+                    itemName = changedResource['name']
+                    itemId = changedResource['id']
+                if fileType == 2:
+                    itemName = changedResource['skus'][0]['items'][0]['title']
+                    itemId = changedResource['skus'][0]['id']
+                addToPad("Changes to item: [{}] id: {}".format(itemName, itemId), curses.color_pair(7))
                 for key in changedResource:
                     if changedResource[key] != resourceInBase[key]:
-                        addToPad("   Property Changed: {} - current: {} previous: {}".format(key, changedResource[key], resourceInBase[key]), curses.color_pair(7))
-                    propertyIndex += 1
+                        if type(changedResource[key]) == str:
+                            addToPad("   Property Changed: key: [{}] - current: [{}] previous: [{}]".format(key, changedResource[key], resourceInBase[key]), curses.color_pair(7))
+                        else:
+                            subKeyIndex = 0
+                            for subKey in changedResource[key]:
+                                if type(subKey) == str:
+                                    if changedResource[key][subKey] != resourceInBase[key][subKey]:
+                                        addToPad("   SubProperty Changed: parent: [{}] key: [{}] - current: [{}] previous: [{}]".format(key, subKey, changedResource[key][subKey], resourceInBase[key][subKey]), curses.color_pair(7))
+                                else:
+                                    for subSubKey in subKey:
+                                        if type(subSubKey) == str:
+                                            if subKeyIndex < len(resourceInBase[key]):
+                                                if subKey[subSubKey] != resourceInBase[key][subKeyIndex][subSubKey]:
+                                                    addToPad("   subKeyIndex:{} ".format(subKeyIndex), curses.color_pair(7))
+                                                    addToPad("     Parent Changed: [{}] key: [{}] current: [{}] previous: [{}]".format(key, subSubKey, subKey[subSubKey], resourceInBase[key][subKeyIndex][subSubKey]), curses.color_pair(7))
+                                            else:
+                                                addToPad("   Added new subKeyIndex:{} to [{}] key:[{}] value:[{}]".format(subKeyIndex, key, subSubKey, subKey[subSubKey]), curses.color_pair(7))
+                                subKeyIndex += 1
+                                    #for subSubKey in subKey:
+                                        #if type(subSubKey) == str:
+                                            #if len(resourceInBase[key]) <= 0:
+                                            #    addToPad("   Property Changed subKey: parent: [{}] key: [{}] subkey: [{}] - current: [{}] previous: [{}]".format(key, subKey, subSubKey, subKey[subSubKey], resourceInBase[key]), curses.color_pair(7))
+                                            #else:
+                                            #    itemIndex = 0
+                                            #    for thirdLevelSubKey in changedResource[key]:
+                                            #        if itemIndex <= len(resourceInBase[key])-1:
+                                            #            if subKey[subSubKey] != resourceInBase[key][itemIndex][subSubKey]:
+                                            #                addToPad("   Property Changed subSubKey: parent: [{}] subkey: [{}] subsubkey: [{}] - current: [{}] previous: [{}]".format(key, subKey, subSubKey, subKey[subSubKey], resourceInBase[key][itemIndex][subSubKey]), curses.color_pair(7))
+                                            #        else:
+                                            #            addToPad("   New SKU added: ID: [{}] ".format(thirdLevelSubKey['id']), curses.color_pair(2))
+                                            #        itemIndex += 1
 
     for resource in jsonBaseItems:
         if findItemById(resource['id'], jsonChangedItems) == False:

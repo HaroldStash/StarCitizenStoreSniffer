@@ -1,26 +1,26 @@
 {
     "data": {
         "ships": [{
-                "id": 322,
-                "name": "Aurora LX222222",
-                "focus": "Pathfinder",
-                "type": "exploration",
+                "id": 1,
+                "name": "Aurora ES",
+                "focus": "Starter / Pathfinder",
+                "type": "multi",
                 "flyableStatus": "Flyable",
                 "owned": false,
-                "msrp": 3500,
-                "link": "/pledge/ships/rsi-aurora/Aurora-LX",
+                "msrp": 2000,
+                "link": "/pledge/ships/rsi-aurora/Aurora-ES",
                 "skus": [{
-                        "id": 14031,
-                        "title": "Standard Edition",
+                        "id": 12988,
+                        "title": "Aurora ES Upgrade",
                         "available": true,
-                        "price": 3500,
+                        "price": 2000,
                         "body": null,
                         "unlimitedStock": true,
                         "availableStock": 0,
                         "limitedTimeOffer": false
                     }
                 ]
-            },{
+            }, {
                 "id": 3,
                 "name": "Aurora LX",
                 "focus": "Pathfinder",
@@ -83,7 +83,7 @@
             }, {
                 "id": 6,
                 "name": "Aurora LN",
-                "focus": "Light Farter",
+                "focus": "Light Fighter",
                 "type": "transport",
                 "flyableStatus": "Flyable",
                 "owned": false,
@@ -113,7 +113,7 @@
                         "id": 13746,
                         "title": "Standard Edition",
                         "available": true,
-                        "price": 6000,
+                        "price": 60200,
                         "body": null,
                         "unlimitedStock": true,
                         "availableStock": 0,
@@ -122,7 +122,7 @@
                         "id": 14886,
                         "title": "Warbond Edition",
                         "available": true,
-                        "price": 5500,
+                        "price": 55200,
                         "body": null,
                         "unlimitedStock": true,
                         "availableStock": 0,

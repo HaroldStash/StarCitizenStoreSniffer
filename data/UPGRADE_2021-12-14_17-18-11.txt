@@ -2,33 +2,10 @@
     "data": {
         "from": {
             "ships": [{
-                    "id": 2323232,
-                    "skus": [{
-                            "id": 12988,
-                            "title": "Aurora ES Upgrade asd",
-                            "price": 2000,
-                            "upgradePrice": null,
-                            "unlimitedStock": true,
-                            "showStock": true,
-                            "available": true,
-                            "availableStock": 0,
-                            "limitedTimeOffer": false,
-                            "body": null,
-                            "items": [{
-                                    "id": 285,
-                                    "title": "Aurora ES"
-                                }
-                            ],
-                            "medias": {
-                                "storeThumbSkuDetail": null
-                            }
-                        }
-                    ]
-                },{
                     "id": 1,
                     "skus": [{
                             "id": 12988,
-                            "title": "Aurora ES Upgrade asd",
+                            "title": "Aurora ES Upgrade",
                             "price": 2000,
                             "upgradePrice": null,
                             "unlimitedStock": true,
@@ -5724,7 +5701,7 @@
                     "skus": [{
                             "id": 15023,
                             "title": "Warbond Edition",
-                            "price": 27500,
+                            "price": 227500,
                             "upgradePrice": null,
                             "unlimitedStock": true,
                             "showStock": true,

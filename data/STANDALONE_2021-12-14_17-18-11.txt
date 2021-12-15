@@ -21,7 +21,7 @@
                             "__typename": "TyItemMedia"
                         },
                         "nativePrice": {
-                            "amount": 1000,
+                            "amount": 100022,
                             "discounted": null,
                             "discountDescription": null,
                             "__typename": "TyBrowsePrice"
@@ -220,7 +220,7 @@
                             "__typename": "TyBrowsePrice"
                         },
                         "price": {
-                            "amount": 500,
+                            "amount": 502,
                             "discounted": null,
                             "taxDescription": [],
                             "discountDescription": null,
