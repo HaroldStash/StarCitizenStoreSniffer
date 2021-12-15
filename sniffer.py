@@ -12,7 +12,7 @@ from curses import wrapper
 import os
 import random
 
-parser = argparse.ArgumentParser(description='RSI Store Parser')
+parser = argparse.ArgumentParser(description='RSI Store Sniffer')
 parser.add_argument('-u', '--upgrade', help="Show all available upgrades for sale in the store", action="store_true")
 parser.add_argument('-s', '--standalone', help="Show all available standalone ships for sale in the store", action="store_true")
 parser.add_argument('-a', '--allships', help="Show all ships in the upgrade database", action="store_true")
