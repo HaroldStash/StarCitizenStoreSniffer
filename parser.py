@@ -18,6 +18,7 @@ args = parser.parse_args()
 
 
 maxPadHeight = 2500
+maxPadWidth = 2500
 currentPadIndex = 0
 pad = []
 
@@ -54,59 +55,75 @@ def addToPad(data, color, result = False):
     currentPadIndex += 1
     pad.refresh(0, 0, 3, 0, curses.LINES-2, curses.COLS-1)
 
-def findResourceById(resourceID, fileJson):
+def findItemById(resourceID, itemList):
     result = False
-    for resource in fileJson['data']['store']['listing']['resources']:
-        if resource['id'] == resourceID:
-            result = resource
+    for item in itemList:
+        if item['id'] == resourceID:
+            result = item
     return result
 
-def getDifferences(baseFile, changedFile):
+def getDifferences(fileType, baseFile, changedFile):
     print("baseFile    {}".format(baseFile))
     print("changedFile {}".format(changedFile))
     with open(baseFile) as fileContent:
         baseFileJson = json.load(fileContent)
     with open(changedFile) as fileContent:
         changedFileJson = json.load(fileContent)
-#STANDALONE FILE
-    if baseFileJson['data']:
-        if 'store' in baseFileJson['data']:
-            resourceIndex = 0
-            addToPad("Base:    {}".format(baseFile), curses.COLOR_WHITE)
-            addToPad("Changed: {}".format(changedFile), curses.COLOR_WHITE)
-            baseResourceCount = len(baseFileJson['data']['store']['listing']['resources'])
-            changedFileCount = len(changedFileJson['data']['store']['listing']['resources'])
 
-            for resource in changedFileJson['data']['store']['listing']['resources']:
-                resourceObject = findResourceById(resource['id'], baseFileJson)
-                if resourceObject == False:
-                    for subResource in baseFileJson['data']['store']['listing']['resources']:
-                        subResourceObject = findResourceById(subResource['id'], changedFileJson)
-                        if subResourceObject == False and resource['name'] == subResource['name']:
-                            addToPad("Resource ID changed: {} to {}".format(subResource['id'], resource['id']), curses.COLOR_WHITE, True)
+    jsonBaseItems = []
+    jsonChangedItems = []
+    if fileType == 0:
+        jsonBaseItems = baseFileJson['data']['store']['listing']['resources']
+        jsonChangedItems = changedFileJson['data']['store']['listing']['resources']
+    if fileType == 1:
+        jsonBaseItems = baseFileJson['data']['ships']
+        jsonChangedItems = changedFileJson['data']['ships']
+    if fileType == 2:
+        jsonBaseItems = baseFileJson['data']['from']['ships']
+        jsonChangedItems = changedFileJson['data']['from']['ships']
 
-            if changedFileCount < baseResourceCount:
-                for resource in baseFileJson['data']['store']['listing']['resources']:
-                    if findResourceById(resource['id'], changedFileJson) == False:
-                        addToPad("Resource Removed: {}".format(resource['id']), curses.COLOR_WHITE, True)
-            else:
-                for resource in changedFileJson['data']['store']['listing']['resources']:
-                    if findResourceById(resource['id'], baseFileJson) == False:
-                        addToPad("Resource Added: [{}] {}".format(resource['id'], resource['name']), curses.COLOR_WHITE, True)
+    addToPad("Base:    {}".format(baseFile), curses.COLOR_WHITE)
+    addToPad("Changed: {}".format(changedFile), curses.COLOR_WHITE)
+    baseResourceCount = len(jsonBaseItems)
+    changedFileCount = len(jsonChangedItems)
 
-            #for baseResource in baseFileJson['data']['store']['listing']['resources']:
-            #    changedResource = findResourceById(baseResource['id'], changedFileJson)
-            #    if changedResource:
-            #        if baseResource != changedResource:
-            #            addToPad("Updated ID: {}".format(baseResource['id']), curses.COLOR_WHITE, True)
-            #            ##LIST OUT OTHER CHANGES HERE
+    for changedResource in jsonChangedItems:
+        resourceInBase = findItemById(changedResource['id'], jsonBaseItems)
+        if resourceInBase == False:
+            for baseResource in jsonBaseItems:
+                resourceInChanged = findItemById(baseResource['id'], jsonChangedItems)
+                if resourceInChanged == False and changedResource['name'] == baseResource['name']:
+                    addToPad("   Resource ID changed: {} to {}".format(baseResource['id'], changedResource['id']), curses.color_pair(6))
+        else:
+            if resourceInBase != changedResource:
+                propertyIndex = 0
+                for key in changedResource:
+                    if changedResource[key] != resourceInBase[key]:
+                        addToPad("   Property Changed: {} - current: {} previous: {}".format(key, changedResource[key], resourceInBase[key]), curses.color_pair(7))
+                    propertyIndex += 1
+
+    for resource in jsonBaseItems:
+        if findItemById(resource['id'], jsonChangedItems) == False:
+            addToPad("   Resource Removed: [{}] {}".format(resource['id'], resource['name']), curses.color_pair(5))
+
+    for resource in jsonChangedItems:
+        if findItemById(resource['id'], jsonBaseItems) == False:
+            resourceName = ""
+            resourcePrice = ""
+            if fileType == 0:
+                resourceName = resource['name']
+                resourcePrice = resource['nativePrice']['amount']/100
+            if fileType == 1:
+                resourceName = resource['name']
+                resourcePrice = resource['msrp']/100
+            if fileType == 2:
+                resourceName = resource['skus'][0]['title']
+                resourcePrice = resource['skus'][0]['price']/100
+            addToPad("   Resource Added: [{}] ${} {}".format(resource['id'], resourcePrice, resourceName), curses.color_pair(2))
+
+    addToPad("", curses.COLOR_WHITE)
 
 
-            resourceIndex += 1
-    #elif baseFile['data']['from']['ships']:#UPGRADE FILE
-        #DO UPGRADE STUFF
-    #elif baseFile['data']['ships']:#ALLSHIPS FILE
-        #DO ALLSHIPS STUFF
 
 def main(stdscr):
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_WHITE)
@@ -115,9 +132,10 @@ def main(stdscr):
     curses.init_pair(4, curses.COLOR_BLACK, curses.COLOR_WHITE)
     curses.init_pair(5, curses.COLOR_WHITE, curses.COLOR_RED)
     curses.init_pair(6, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    curses.init_pair(7, curses.COLOR_BLACK, curses.COLOR_CYAN)
     height, width = stdscr.getmaxyx()
     global pad
-    pad = curses.newpad(maxPadHeight, curses.COLS)
+    pad = curses.newpad(maxPadHeight, maxPadWidth)
     pad.bkgd(curses.color_pair(3))
     firstQuery = True
     tableData = []
@@ -153,16 +171,19 @@ def main(stdscr):
             fileIndex = 0
             if "STANDALONE" in setOfFiles[0]:
                 addToPad("###########STANDALONE DIFFERENCES###########", curses.COLOR_WHITE, False)
+                fileType = 0
             elif "ALLSHIPS" in setOfFiles[0]:
                 addToPad("###########ALLSHIPS DIFFERENCES###########", curses.COLOR_WHITE, False)
+                fileType = 1
             elif "UPGRADE" in setOfFiles[0]:
                 addToPad("###########UPGRADE DIFFERENCES###########", curses.COLOR_WHITE, False)
+                fileType = 2
             for file in setOfFiles:
                 if fileIndex == 0:
                     baseFileCompare = file
                 else:
                     changedFileToCompare = file
-                    getDifferences(baseFileCompare, changedFileToCompare)
+                    getDifferences(fileType, baseFileCompare, changedFileToCompare)
                     baseFileCompare = file
                 fileIndex += 1
             addToPad("#########################################", curses.COLOR_WHITE, False)
@@ -184,9 +205,9 @@ def main(stdscr):
         elif keyPress == curses.KEY_PPAGE:
             scrollPosHeight = clamp(0, (scrollPosHeight - 45), maxPadHeight-1)
         elif  keyPress == curses.KEY_LEFT:
-            scrollPosWidth = clamp(0, (scrollPosWidth - 1), curses.COLS-1)
+            scrollPosWidth = clamp(0, (scrollPosWidth - 1), maxPadWidth-1)
         elif keyPress == curses.KEY_RIGHT:
-            scrollPosWidth = clamp(0, (scrollPosWidth + 1), curses.COLS-1)
+            scrollPosWidth = clamp(0, (scrollPosWidth + 1), maxPadWidth-1)
         pad.refresh(scrollPosHeight, scrollPosWidth, 3, 0, curses.LINES-2, curses.COLS-1)
         #=stdscr.refresh()
 wrapper(main)
