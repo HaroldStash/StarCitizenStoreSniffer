@@ -63,8 +63,8 @@ def findItemById(resourceID, itemList):
     return result
 
 def getDifferences(fileType, baseFile, changedFile):
-    print("baseFile    {}".format(baseFile))
-    print("changedFile {}".format(changedFile))
+    #print("baseFile    {}".format(baseFile))
+    #print("changedFile {}".format(changedFile))
     with open(baseFile) as fileContent:
         baseFileJson = json.load(fileContent)
     with open(changedFile) as fileContent:
@@ -128,12 +128,16 @@ def getDifferences(fileType, baseFile, changedFile):
                                                 addToPad("   Added new subKeyIndex:{} to [{}] key:[{}] value:[{}]".format(subKeyIndex, key, subSubKey, subKey[subSubKey]), curses.color_pair(7))
                                 subKeyIndex += 1
 
+
     for resource in jsonBaseItems:
-        if findItemById(resource['id'], jsonChangedItems) == False:
+        changedResourceObject = findItemById(resource['id'], jsonChangedItems)
+        if changedResourceObject == False:
             addToPad("   Resource Removed: [{}] {}".format(resource['id'], resource['name']), curses.color_pair(5))
 
+
     for resource in jsonChangedItems:
-        if findItemById(resource['id'], jsonBaseItems) == False:
+        baseResourceObject = findItemById(resource['id'], jsonBaseItems)
+        if baseResourceObject == False:
             resourceName = ""
             resourcePrice = ""
             if fileType == 0:
@@ -194,7 +198,7 @@ def main(stdscr):
 
     for setOfFiles in fileArray:
         if len(setOfFiles) > 1:
-            print(setOfFiles)
+            #print(setOfFiles)
             fileIndex = 0
             if "STANDALONE" in setOfFiles[0]:
                 addToPad("###########STANDALONE DIFFERENCES###########", curses.COLOR_WHITE, False)
