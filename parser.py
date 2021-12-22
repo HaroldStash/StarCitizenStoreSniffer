@@ -127,19 +127,6 @@ def getDifferences(fileType, baseFile, changedFile):
                                             else:
                                                 addToPad("   Added new subKeyIndex:{} to [{}] key:[{}] value:[{}]".format(subKeyIndex, key, subSubKey, subKey[subSubKey]), curses.color_pair(7))
                                 subKeyIndex += 1
-                                    #for subSubKey in subKey:
-                                        #if type(subSubKey) == str:
-                                            #if len(resourceInBase[key]) <= 0:
-                                            #    addToPad("   Property Changed subKey: parent: [{}] key: [{}] subkey: [{}] - current: [{}] previous: [{}]".format(key, subKey, subSubKey, subKey[subSubKey], resourceInBase[key]), curses.color_pair(7))
-                                            #else:
-                                            #    itemIndex = 0
-                                            #    for thirdLevelSubKey in changedResource[key]:
-                                            #        if itemIndex <= len(resourceInBase[key])-1:
-                                            #            if subKey[subSubKey] != resourceInBase[key][itemIndex][subSubKey]:
-                                            #                addToPad("   Property Changed subSubKey: parent: [{}] subkey: [{}] subsubkey: [{}] - current: [{}] previous: [{}]".format(key, subKey, subSubKey, subKey[subSubKey], resourceInBase[key][itemIndex][subSubKey]), curses.color_pair(7))
-                                            #        else:
-                                            #            addToPad("   New SKU added: ID: [{}] ".format(thirdLevelSubKey['id']), curses.color_pair(2))
-                                            #        itemIndex += 1
 
     for resource in jsonBaseItems:
         if findItemById(resource['id'], jsonChangedItems) == False:
@@ -156,7 +143,8 @@ def getDifferences(fileType, baseFile, changedFile):
                 resourceName = resource['name']
                 resourcePrice = resource['msrp']/100
             if fileType == 2:
-                resourceName = resource['skus'][0]['title']
+                #resourceName = resource['skus'][0]['title']
+                resourceName = resource['skus'][0]['items'][0]['title']
                 resourcePrice = resource['skus'][0]['price']/100
             addToPad("   Resource Added: [{}] ${} {}".format(resource['id'], resourcePrice, resourceName), curses.color_pair(2))
 
