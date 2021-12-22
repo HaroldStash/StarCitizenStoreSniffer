@@ -399,7 +399,7 @@ def doesPreviousJsonEqualCurrent(nametype, previous, current):
     if current['data'] != previous['data']:
         fileName = writeDataFile(nametype, current)
         #print("{} does not match, saving copy. {}".format(nametype, fileName))
-        stdscr.addstr(1, 150, "{} does not match, saving copy. {}".format(nametype, fileName), curses.color_pair(5))
+        stdscr.addstr(1, 130, "{} does not match, saving copy. {}".format(nametype, fileName), curses.color_pair(5))
 
 def printSeparatorLine():
     lines = ""
