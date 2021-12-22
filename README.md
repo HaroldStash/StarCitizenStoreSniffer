@@ -11,3 +11,7 @@ To see VIP(concierge) packages you must use Chrome(currently) to login to the rs
 
 
 If you use this please do not query them too fast. Theres no need to query less than the default watchdelay of 25 seconds. There wont be any added benifit. 
+
+<img src="1.png" width="512"/>
+
+<img src="2.png" width="512"/>
