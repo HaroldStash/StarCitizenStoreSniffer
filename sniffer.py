@@ -23,31 +23,7 @@ api_settoken = "https://robertsspaceindustries.com/api/account/v2/setAuthToken"
 api_settokencontext = "https://robertsspaceindustries.com/api/ship-upgrades/setContextToken?fromShipId&pledgeId&toShipId&toSkuId"
 api_url_upgrades = "https://robertsspaceindustries.com/pledge-store/api/upgrade/graphql"
 api_url_standalone = "https://robertsspaceindustries.com/graphql"
-query_upgrades = """query filterShips($fromId: Int, $toId: Int, $fromFilters: [FilterConstraintValues], $toFilters: [FilterConstraintValues]) {
-  from(to: $toId, filters: $fromFilters) {
-    ships {
-      id
-      skus {
-      id
-      title
-      price
-      upgradePrice
-      unlimitedStock
-      showStock
-      available
-      availableStock
-      limitedTimeOffer
-      body
-      items {
-        id
-        title
-      }
-      medias {
-        storeThumbSkuDetail
-      }
-    }
-    }
-  }
+query_upgrades = """query filterShips($fromId: Int, $toFilters: [FilterConstraintValues]) {
   to(from: $fromId, filters: $toFilters) {
     featured {
       reason
@@ -361,7 +337,7 @@ patterns = [
 ]
 
 stdscr = curses.initscr()
-cookies = browser_cookie3.chrome(cookie_file="C:\\Users\Harold\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Network\\Cookies", domain_name="robertsspaceindustries.com")
+cookies = browser_cookie3.chrome(cookie_file="C:\\Users\\Harold\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Network\\Cookies", domain_name="robertsspaceindustries.com")
 #cookies = browser_cookie3.chrome()
 
 #setTokenContext = requests.post(api_settokencontext, cookies=setToken.cookies)
@@ -436,8 +412,8 @@ def main(stdscr):
         if time.time() > lastTime + args.watchdelay:
             setToken = querySetToken()
             json_Standalone = queryGraphQLForJson(1, "STANDALONE", api_url_standalone, query_standalone, variables_standalone, cookies)
-            json_Allship = queryGraphQLForJson(2, "ALLSHIPS", api_url_upgrades, query_allships, variables_allships, setToken.cookies)
-            json_Upgrade = queryGraphQLForJson(0, "UPGRADE", api_url_upgrades, query_upgrades, variables_upgrades, setToken.cookies)
+            json_Allship = queryGraphQLForJson(2, "ALLSHIPS", api_url_upgrades, query_allships, variables_allships, cookies)
+            json_Upgrade = queryGraphQLForJson(0, "UPGRADE", api_url_upgrades, query_upgrades, variables_upgrades, cookies)
             if firstQuery:
                 firstQuery = False
                 previous_json_Upgrade = json_Upgrade
