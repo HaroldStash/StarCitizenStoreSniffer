@@ -109,30 +109,42 @@ def getDifferences(fileType, baseFile, changedFile):
                 addToPad("Changes to item: [{}] id: {}".format(itemName, itemId), curses.color_pair(7))
                 for key in changedResource:
                     if changedResource[key] != resourceInBase[key]:
-                        if type(changedResource[key]) == str:
+                        if type(changedResource[key]) == str or type(changedResource[key]) == bool:
                             addToPad("   Property Changed: key: [{}] - current: [{}] previous: [{}]".format(key, changedResource[key], resourceInBase[key]), curses.color_pair(7))
                         else:
-                            subKeyIndex = 0
-                            for subKey in changedResource[key]:
-                                if type(subKey) == str:
-                                    if changedResource[key][subKey] != resourceInBase[key][subKey]:
-                                        addToPad("   SubProperty Changed: parent: [{}] key: [{}] - current: [{}] previous: [{}]".format(key, subKey, changedResource[key][subKey], resourceInBase[key][subKey]), curses.color_pair(7))
-                                else:
-                                    for subSubKey in subKey:
-                                        if type(subSubKey) == str:
-                                            if subKeyIndex < len(resourceInBase[key]):
-                                                if subKey[subSubKey] != resourceInBase[key][subKeyIndex][subSubKey]:
-                                                    addToPad("   subKeyIndex:{} ".format(subKeyIndex), curses.color_pair(7))
-                                                    addToPad("     Parent Changed: [{}] key: [{}] current: [{}] previous: [{}]".format(key, subSubKey, subKey[subSubKey], resourceInBase[key][subKeyIndex][subSubKey]), curses.color_pair(7))
-                                            else:
-                                                addToPad("   Added new subKeyIndex:{} to [{}] key:[{}] value:[{}]".format(subKeyIndex, key, subSubKey, subKey[subSubKey]), curses.color_pair(7))
-                                subKeyIndex += 1
+
+                            print("Base: {}".format(resourceInBase[key]))
+                            print("Chgd: {}".format(changedResource[key]))
+                            if len(resourceInBase[key]) < len(changedResource[key]):
+                                subKeyIndex = 0
+                                for subKey in changedResource[key]:
+                                    if type(subKey) == str:
+                                        if changedResource[key][subKey] != resourceInBase[key][subKey]:
+                                            addToPad("   SubProperty Changed: parent: [{}] key: [{}] - current: [{}] previous: [{}]".format(key, subKey, changedResource[key][subKey], resourceInBase[key][subKey]), curses.color_pair(7))
+                                    else:
+                                        for subSubKey in subKey:
+                                            if type(subSubKey) == str:
+                                                if subKeyIndex < len(resourceInBase[key]):
+                                                    if subKey[subSubKey] != resourceInBase[key][subKeyIndex][subSubKey]:
+                                                        addToPad("   subKeyIndex:{} ".format(subKeyIndex), curses.color_pair(7))
+                                                        addToPad("     Parent Changed: [{}] key: [{}] current: [{}] previous: [{}]".format(key, subSubKey, subKey[subSubKey], resourceInBase[key][subKeyIndex][subSubKey]), curses.color_pair(7))
+                                                else:
+                                                    addToPad("   Added new subKeyIndex:{} to [{}] key:[{}] value:[{}]".format(subKeyIndex, key, subSubKey, subKey[subSubKey]), curses.color_pair(7))
+                                    subKeyIndex += 1
+                            else:
+                                addToPad("   SKU Removed", curses.color_pair(5))
 
 
     for resource in jsonBaseItems:
         changedResourceObject = findItemById(resource['id'], jsonChangedItems)
+        resourceName = "UNKNOWN"
         if changedResourceObject == False:
-            addToPad("   Resource Removed: [{}] {}".format(resource['id'], resource['name']), curses.color_pair(5))
+            if 'name' in resource:
+                resourceName = resource['name']
+            else:
+                resourceName = resource['skus'][0]['items'][0]['title']
+            addToPad("   Resource Removed: [{}] {}".format(resource['id'], resourceName), curses.color_pair(5))
+
 
 
     for resource in jsonChangedItems:
