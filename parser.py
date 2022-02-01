@@ -92,8 +92,9 @@ def getDifferences(fileType, baseFile, changedFile):
         if resourceInBase == False:
             for baseResource in jsonBaseItems:
                 resourceInChanged = findItemById(baseResource['id'], jsonChangedItems)
-                if resourceInChanged == False and changedResource['name'] == baseResource['name']:
-                    addToPad("   Resource ID changed: {} to {}".format(baseResource['id'], changedResource['id']), curses.color_pair(6))
+                if 'name' in changedResource:
+                    if resourceInChanged == False and changedResource['name'] == baseResource['name']:
+                        addToPad("   Resource ID changed: {} to {}".format(baseResource['id'], changedResource['id']), curses.color_pair(6))
         else:
             if resourceInBase != changedResource:
                 itemName = ""
@@ -113,8 +114,8 @@ def getDifferences(fileType, baseFile, changedFile):
                             addToPad("   Property Changed: key: [{}] - current: [{}] previous: [{}]".format(key, changedResource[key], resourceInBase[key]), curses.color_pair(7))
                         else:
 
-                            print("Base: {}".format(resourceInBase[key]))
-                            print("Chgd: {}".format(changedResource[key]))
+                            #print("Base: {}".format(resourceInBase[key]))
+                            #print("Chgd: {}".format(changedResource[key]))
                             if len(resourceInBase[key]) < len(changedResource[key]):
                                 subKeyIndex = 0
                                 for subKey in changedResource[key]:

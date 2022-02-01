@@ -455,9 +455,9 @@ def main(stdscr):
 #################################################################
 ############################ALLSHIPS#############################
             if args.allships:
+                itemCount = 0
+                skuCount = 0
                 if json_Allship['data']['ships']:
-                    itemCount = 0
-                    skuCount = 0
                     for i in json_Allship['data']['ships']:
                         flyableStatus = i['flyableStatus']
                         shipName = i['name']
@@ -512,6 +512,7 @@ def main(stdscr):
 #################################################################
 ############################UPGRADES#############################
             if args.upgrade:
+                print(json_Upgrade)
                 if json_Upgrade['data']['to']['ships']:
                     for i in json_Upgrade['data']['to']['ships']:
                         if i['skus']:
