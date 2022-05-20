@@ -135,8 +135,16 @@ def getDifferences(fileType, baseFile, changedFile):
                                     subKeyIndex += 1
                             else:
                                 for item in resourceInBase[key]:
-                                    if resourceInBase[key][item] != changedResource[key][item]:
-                                        addToPad("   Property Changed [{}] current: [{}] previous: [{}]".format(item, changedResource[key][item], resourceInBase[key][item]), curses.color_pair(7))
+                                    if type(item) is not dict:
+                                        if resourceInBase[key][item] != changedResource[key][item]:
+                                            addToPad("   Property Changed [{}] current: [{}] previous: [{}]".format(item, changedResource[key][item], resourceInBase[key][item]), curses.color_pair(7))
+                                    else:
+                                        if len(changedResource[key]) < len(resourceInBase[key]):
+                                            addToPad("   sku removed:", curses.color_pair(5))
+                                            for keyvalue in item:
+                                                addToPad("      [{}] = [{}]".format(keyvalue, item[keyvalue]), curses.color_pair(5))
+                                        else:
+                                            addToPad("   sku added: [{}]".format(changedResource[key]), curses.color_pair(5))
 
 
 
