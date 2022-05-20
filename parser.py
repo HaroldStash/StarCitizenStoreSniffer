@@ -143,8 +143,12 @@ def getDifferences(fileType, baseFile, changedFile):
                                             addToPad("   sku removed:", curses.color_pair(5))
                                             for keyvalue in item:
                                                 addToPad("      [{}] = [{}]".format(keyvalue, item[keyvalue]), curses.color_pair(5))
+                                        elif len(changedResource[key]) > len(resourceInBase[key]):
+                                            addToPad("   sku added:", curses.color_pair(2))
+                                            for keyvalue in item:
+                                                addToPad("      [{}] = [{}]".format(keyvalue, item[keyvalue]), curses.color_pair(2))
                                         else:
-                                            addToPad("   sku added: [{}]".format(changedResource[key]), curses.color_pair(5))
+                                            addToPad("   sku modified: current: [{}] previous: [{}]".format(changedResource[key], resourceInBase[key]), curses.color_pair(2))
 
 
 
