@@ -82,8 +82,9 @@ def getDifferences(fileType, baseFile, changedFile):
         jsonBaseItems = baseFileJson['data']['to']['ships']
         jsonChangedItems = changedFileJson['data']['to']['ships']
 
-    addToPad("Base:    {}".format(baseFile), curses.COLOR_WHITE)
-    addToPad("Changed: {}".format(changedFile), curses.COLOR_WHITE)
+    if baseFileJson != changedFileJson:
+        addToPad("Base:    {}".format(baseFile), curses.COLOR_WHITE)
+        addToPad("Changed: {}".format(changedFile), curses.COLOR_WHITE)
     baseResourceCount = len(jsonBaseItems)
     changedFileCount = len(jsonChangedItems)
 
@@ -116,7 +117,7 @@ def getDifferences(fileType, baseFile, changedFile):
 
                             #print("Base: {}".format(resourceInBase[key]))
                             #print("Chgd: {}".format(changedResource[key]))
-                            if len(resourceInBase[key]) < len(changedResource[key]):
+                            if not isinstance(resourceInBase[key], int) and len(resourceInBase[key]) < len(changedResource[key]):
                                 subKeyIndex = 0
                                 for subKey in changedResource[key]:
                                     if type(subKey) == str:
@@ -133,7 +134,10 @@ def getDifferences(fileType, baseFile, changedFile):
                                                     addToPad("   Added new subKeyIndex:{} to [{}] key:[{}] value:[{}]".format(subKeyIndex, key, subSubKey, subKey[subSubKey]), curses.color_pair(7))
                                     subKeyIndex += 1
                             else:
-                                addToPad("   SKU Removed", curses.color_pair(5))
+                                for item in resourceInBase[key]:
+                                    if resourceInBase[key][item] != changedResource[key][item]:
+                                        addToPad("   Property Changed [{}] current: [{}] previous: [{}]".format(item, changedResource[key][item], resourceInBase[key][item]), curses.color_pair(7))
+
 
 
     for resource in jsonBaseItems:
@@ -165,7 +169,7 @@ def getDifferences(fileType, baseFile, changedFile):
                 resourcePrice = resource['skus'][0]['price']/100
             addToPad("   Resource Added: [{}] ${} {}".format(resource['id'], resourcePrice, resourceName), curses.color_pair(2))
 
-    addToPad("", curses.COLOR_WHITE)
+#    addToPad("", curses.COLOR_WHITE)
 
 
 

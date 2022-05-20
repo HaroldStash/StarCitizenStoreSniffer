@@ -368,7 +368,7 @@ def querySetToken():
         stdscr.addstr(0, 50, "SET TOKEN: PASS {} - {}".format(query.status_code, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")), curses.color_pair(2))
     else:
         stdscr.addstr(0, 50, "SET TOKEN: FAIL {} - {}".format(query.status_code, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")), curses.color_pair(5))
-    #print(query.cookies)
+    print(query.cookies)
     return query
 
 def doesPreviousJsonEqualCurrent(nametype, previous, current):
@@ -412,8 +412,8 @@ def main(stdscr):
         if time.time() > lastTime + args.watchdelay:
             setToken = querySetToken()
             json_Standalone = queryGraphQLForJson(1, "STANDALONE", api_url_standalone, query_standalone, variables_standalone, cookies)
-            json_Allship = queryGraphQLForJson(2, "ALLSHIPS", api_url_upgrades, query_allships, variables_allships, cookies)
-            json_Upgrade = queryGraphQLForJson(0, "UPGRADE", api_url_upgrades, query_upgrades, variables_upgrades, cookies)
+            json_Allship = queryGraphQLForJson(2, "ALLSHIPS", api_url_upgrades, query_allships, variables_allships, setToken.cookies)
+            json_Upgrade = queryGraphQLForJson(0, "UPGRADE", api_url_upgrades, query_upgrades, variables_upgrades, setToken.cookies)
             if firstQuery:
                 firstQuery = False
                 previous_json_Upgrade = json_Upgrade
